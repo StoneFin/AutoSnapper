@@ -3,6 +3,8 @@ AutoSnapper
 
 Automated Amazon Web Services Snapshot Management Utility
 
+.NET project built in Visual Studio 2012.
+
 This is a quick console app we put together that automates the Snapshot process for Amazon Web Services.
 
 It makes snapshots of AWS volumes deletes aging snapshots, according to your App.config settings.
