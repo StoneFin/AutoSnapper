@@ -169,8 +169,9 @@ namespace AutoSnapper
     public static List<Snapshot> GetSnapshots()
     {
       var describeSnapshotsResponse = Services.GetDescribeSnapshotsResponse();
+      var snapshots = describeSnapshotsResponse.Snapshots;
 
-      return describeSnapshotsResponse.Snapshots;
+      return snapshots;
     }
 
     /// <summary>
@@ -180,7 +181,9 @@ namespace AutoSnapper
     /// <returns></returns>
     public static List<Snapshot> GetSnapshots(DateTime expDate)
     {
-      return GetSnapshots().Where(x => x.StartTime < expDate).ToList();
+      var snapshots = GetSnapshots().Where(x => x.StartTime < expDate).ToList();
+
+      return snapshots;
     }
 
     /// <summary>
@@ -190,7 +193,9 @@ namespace AutoSnapper
     /// <returns></returns>
     public static List<Snapshot> GetSnapshots(Tag tag)
     {
-      return GetSnapshots().Where(x => x.Tags.Contains(tag)).ToList();
+      var snapshots = GetSnapshots().Where(x => x.Tags.Any(y => y.Key == tag.Key && y.Value == tag.Value)).ToList();
+
+      return snapshots;
     }
 
     /// <summary>
@@ -202,7 +207,12 @@ namespace AutoSnapper
     /// <returns></returns>
     public static List<Snapshot> GetSnapshots(DateTime expDate, Tag tag)
     {
-      return GetSnapshots().Where(x => x.StartTime < expDate && x.Tags.Contains(tag)).ToList();
+      var snapshots =
+        GetSnapshots()
+          .Where(x => x.StartTime < expDate && x.Tags.Any(y => y.Key == tag.Key && y.Value == tag.Value))
+          .ToList();
+
+      return snapshots;
     }
     #endregion
   }
