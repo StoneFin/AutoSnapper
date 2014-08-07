@@ -108,6 +108,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="InstanceManager.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="assemblyinfo.cs" />
     <Compile Include="Services.cs" />
