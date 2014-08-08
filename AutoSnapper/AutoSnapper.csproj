@@ -108,8 +108,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Instance.cs" />
+    <Compile Include="InstanceManager.cs" />
+    <Compile Include="Instances.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="assemblyinfo.cs" />
+    <Compile Include="RegisterInstancesConfig.cs" />
     <Compile Include="Services.cs" />
     <Compile Include="SnapshotManager.cs" />
     <Compile Include="VolumeManager.cs" />
