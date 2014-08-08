@@ -7,6 +7,7 @@ using Amazon.SimpleDB.Model;
 using System.Collections.Generic;
 using System.Configuration;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace AutoSnapper
@@ -14,6 +15,28 @@ namespace AutoSnapper
   class Services
   {
     #region Public Methods
+    /// <summary>
+    /// returns the list of instances specified in the instancesToStop section in App.config
+    /// </summary>
+    /// <returns></returns>
+    public static List<Instance> GetInstancesToStop()
+    {
+      var instances = ((RegisterInstancesConfig)ConfigurationManager.GetSection("RegisterInstances")).InstancesToStop.ToList();
+
+      return instances;
+    }
+
+    /// <summary>
+    /// returns the list of instances specified in the instancesToStart section in App.config
+    /// </summary>
+    /// <returns></returns>
+    public static List<Instance> GetInstancesToStart()
+    {
+     var instances = ((RegisterInstancesConfig)ConfigurationManager.GetSection("RegisterInstances")).InstancesToStart.ToList();
+
+      return instances;
+    }
+
     /// <summary>
     /// returns a string containing EC2 Instance Count, Volume Details, Snapshot Details, Simble DB Instance Count and S3 Instance Count
     /// </summary>
