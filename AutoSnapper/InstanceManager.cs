@@ -8,6 +8,7 @@ namespace AutoSnapper
 {
   class InstanceManager
   {
+    #region Public Methods
     /// <summary>
     /// stops all instances contained in the collection
     /// </summary>
@@ -122,13 +123,45 @@ namespace AutoSnapper
 
       return sb.ToString();
     }
-
-    public static void Ec2Check()
+    
+    /// <summary>
+    /// returns true when all instances are running
+    /// </summary>
+    /// <param name="instances"></param>
+    /// <returns></returns>
+    public static bool InstancesAreRunning(List<Instance> instances)
     {
-      var ec2Request = new DescribeInstancesRequest();
-
-      ec2Request.InstanceIds;
+      var instanceIds = new List<string>();
       
+      foreach (var instance in instances)
+      {
+        instanceIds.Add(instance.InstanceId);
+      }
+
+      var ec2Request = new DescribeInstanceStatusRequest()
+      {
+        InstanceIds = instanceIds
+      };
+
+      var ec2Client = Services.GetEc2Client();
+      var statusResult = ec2Client.DescribeInstanceStatus(ec2Request).DescribeInstanceStatusResult;
+
+      if (statusResult.InstanceStatuses.Count == 0)
+      {
+        //no instances found; must not be running yet
+        return false;
+      }
+
+      foreach (var instanceStatus in statusResult.InstanceStatuses)
+      {
+        if (!instanceStatus.InstanceState.Name.Value.Equals("running"))
+        {
+          return false;
+        }
+      }
+
+      return true;
     }
+    #endregion
   }
 }
