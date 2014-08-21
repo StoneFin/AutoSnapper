@@ -3,7 +3,9 @@ AutoSnapper
 
 Automated Amazon Web Services Snapshot Management Utility
 
-.NET project built in Visual Studio 2013.
+.NET project built in Visual Studio 2013 using AWS SDK for .NET
+
+http://aws.amazon.com/sdk-for-net/
 
 This is a quick console app we put together that automates a few processes for Amazon Web Services.
 
