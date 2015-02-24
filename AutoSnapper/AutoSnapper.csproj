@@ -58,10 +58,10 @@
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestCertificateThumbprint>41C64031B739FBA4B31E3227EEED65A8B9FF4209</ManifestCertificateThumbprint>
+    <ManifestCertificateThumbprint>312C05EA86798498205E8B728286BA47830B06B4</ManifestCertificateThumbprint>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestKeyFile>AutoSnapper_TemporaryKey.pfx</ManifestKeyFile>
+    <ManifestKeyFile>AutoSnapper_1_TemporaryKey.pfx</ManifestKeyFile>
   </PropertyGroup>
   <PropertyGroup>
     <GenerateManifests>true</GenerateManifests>
@@ -150,6 +150,7 @@
       <SubType>Designer</SubType>
     </None>
     <None Include="App.example.config" />
+    <None Include="AutoSnapper_1_TemporaryKey.pfx" />
     <None Include="AutoSnapper_TemporaryKey.pfx" />
   </ItemGroup>
 </Project>
