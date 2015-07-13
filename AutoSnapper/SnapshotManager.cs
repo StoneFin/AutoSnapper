@@ -6,11 +6,15 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Amazon.EC2;
+using NLog;
 
 namespace AutoSnapper
 {
-  class SnapshotManager
-  {
+  class SnapshotManager {
+    static SnapshotManager() {
+      Log = LogManager.GetCurrentClassLogger();
+    }
+    public static Logger Log { get; set; }
     #region Public Methods
     /// <summary>
     /// creates a Snapshot for each Volume
@@ -27,6 +31,8 @@ namespace AutoSnapper
         sr.WriteLine("===========================================");
 
         var volumeList = VolumeManager.GetVolumes();
+        Log.Trace("volume count: " + volumeList.Count);
+        var ec2 = Services.GetEc2Client();
 
         foreach (var volume in volumeList)
         {
@@ -38,11 +44,12 @@ namespace AutoSnapper
                                                   volume.VolumeId, string.Join(",", instanceIdList));
 
           sr.WriteLine(snapshotDescription);
-          CreateSnapshot(volume, snapshotDescription);
+          CreateSnapshot(volume, snapshotDescription, ec2);
         }
       }
-
-      return sb.ToString();
+      var outputMsg = sb.ToString();
+      Log.Trace(outputMsg);
+      return outputMsg;
     }
 
     /// <summary>
@@ -52,9 +59,7 @@ namespace AutoSnapper
     public static string PurgeOldSnapshots()
     {
       var sb = new StringBuilder();
-
       var expDays = Convert.ToInt32(ConfigurationManager.AppSettings["SnapshotExpiration"]);
-
       using (var sr = new StringWriter(sb))
       {
         if (expDays != 0)
@@ -91,7 +96,10 @@ namespace AutoSnapper
                 ec2.DeleteSnapshot(deleteSnapshotRequest);
               }
               catch (Exception ex) {
-                sr.WriteLine("Failed to delete snapshot {0}, failed with exception {1}", snapshot.SnapshotId, ex.Message);
+                var msg = String.Format("Failed to delete snapshot {0}, failed with exception {1}", snapshot.SnapshotId,
+                  ex.Message);
+                sr.WriteLine(msg);
+                Log.Error(ex, msg);
               }
             }
           }
@@ -109,8 +117,9 @@ namespace AutoSnapper
           sr.WriteLine("===========================================");
         }
       }
-
-      return sb.ToString();
+      var outputText = sb.ToString();
+      Log.Trace(outputText);
+      return outputText;
     }
 
     /// <summary>
@@ -119,9 +128,8 @@ namespace AutoSnapper
     /// <param name="v"></param>
     /// <param name="description"></param>
     /// <returns></returns>
-    public static Snapshot CreateSnapshot(Volume v, string description)
+    public static Snapshot CreateSnapshot(Volume v, string description, IAmazonEC2 ec2)
     {
-      var ec2 = Services.GetEc2Client();
       
       var snapReq = new CreateSnapshotRequest
                       {
@@ -129,43 +137,53 @@ namespace AutoSnapper
                         Description = description
                       };
 
-      var snapResp = ec2.CreateSnapshot(snapReq);
-      var snapshot = snapResp.Snapshot;
-
-      if (!string.IsNullOrEmpty(description))
-      {
-        var resourceList = new List<string>
-                             {
-                               snapshot.SnapshotId
-                             };
-
-        var tagDescription = new Tag
-                    {
-                      Key = "Description",
-                      Value = description
-                    };
-
-        var tagAutoSnapper = new Tag
-                               {
-                                 Key = ConfigurationManager.AppSettings["SnapshotTagKey"],
-                                 Value = ConfigurationManager.AppSettings["SnapshotTagValue"]
-                               };
-
-        var tagList = new List<Tag>
-                        {
-                          tagDescription,
-                          tagAutoSnapper
-                        };
-
-        var createTagsReq = new CreateTagsRequest
-                              {
-                                Resources = resourceList,
-                                Tags = tagList
-                              };
-
-        ec2.CreateTags(createTagsReq);
+      Snapshot snapshot;
+      try {
+        var snapResp = ec2.CreateSnapshot(snapReq);
+        snapshot = snapResp.Snapshot;
+      }
+      catch (Exception ex) {
+        Log.Error(ex,"Error creating snapshot for volume " + v.VolumeId);
+        return null;
       }
 
+      if (string.IsNullOrEmpty(description)) 
+        return snapshot;
+      var resourceList = new List<string>
+      {
+        snapshot.SnapshotId
+      };
+
+      var tagDescription = new Tag
+      {
+        Key = "Description",
+        Value = description
+      };
+
+      var tagAutoSnapper = new Tag
+      {
+        Key = ConfigurationManager.AppSettings["SnapshotTagKey"],
+        Value = ConfigurationManager.AppSettings["SnapshotTagValue"]
+      };
+
+      var tagList = new List<Tag>
+      {
+        tagDescription,
+        tagAutoSnapper
+      };
+
+      var createTagsReq = new CreateTagsRequest
+      {
+        Resources = resourceList,
+        Tags = tagList
+      };
+
+      try {
+        ec2.CreateTags(createTagsReq);
+      }
+      catch (Exception ex) {
+        Log.Error(ex,"Error creating tags for snapshot " + snapshot.SnapshotId);
+      }
       return snapshot;
     }
 

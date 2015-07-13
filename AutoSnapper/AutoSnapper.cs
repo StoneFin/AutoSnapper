@@ -5,11 +5,28 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using CLAP;
+using CLAP.Interception;
 
 namespace AutoSnapper
 {
-  public class AutoSnapper
-  {
+  public class AutoSnapper {
+    private static readonly NLog.Logger _logger = NLog.LogManager.GetCurrentClassLogger();
+
+    [PreVerbExecution]
+    public static void PreExecute(PreVerbExecutionContext context) {
+      _logger.Debug("Pre-Execute " + join(context.Method.Names));
+    }
+
+    private static string join(IEnumerable<string> source) {
+      return String.Join(",", source);
+    }
+    [PostVerbExecution]
+    public static void PostExecute(PostVerbExecutionContext context) {
+      _logger.Debug("Post-Execute " + context.Method.Names);
+      if (context.Exception != null) {
+        _logger.Fatal(context.Exception, "Fatal Exception occured during execution of " + join(context.Method.Names));
+      }
+    }
     [Verb(Aliases = "/DisplaySummary", Description = "List information for ec2, volumes, snapshots, simpleDB and s3")]
     public static void DisplaySummary() {
       SafeInvoke(Services.GetServiceOutput);
@@ -56,6 +73,7 @@ namespace AutoSnapper
       Console.Write("press enter to continue...");
       Console.Read();
     }
+
     [Empty, Help]
     public static void Help(string help) {
       // this is an empty handler that prints
@@ -69,7 +87,7 @@ namespace AutoSnapper
         Console.WriteLine(a());
       }
       catch (Exception ex) {
-
+        _logger.Error(ex,"Error caught in safeinvoke.");
       }
     }
   }
