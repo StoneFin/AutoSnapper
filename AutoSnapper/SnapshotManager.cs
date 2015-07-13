@@ -26,7 +26,6 @@ namespace AutoSnapper
 
       using (var sr = new StringWriter(sb))
       {
-        Log.Trace("Snapshotting all volumes");
         sr.WriteLine("===========================================");
         sr.WriteLine("Creating Snapshots for All Volumes");
         sr.WriteLine("===========================================");
@@ -48,8 +47,9 @@ namespace AutoSnapper
           CreateSnapshot(volume, snapshotDescription, ec2);
         }
       }
-
-      return sb.ToString();
+      var outputMsg = sb.ToString();
+      Log.Trace(outputMsg);
+      return outputMsg;
     }
 
     /// <summary>
@@ -59,9 +59,7 @@ namespace AutoSnapper
     public static string PurgeOldSnapshots()
     {
       var sb = new StringBuilder();
-
       var expDays = Convert.ToInt32(ConfigurationManager.AppSettings["SnapshotExpiration"]);
-
       using (var sr = new StringWriter(sb))
       {
         if (expDays != 0)
@@ -98,7 +96,10 @@ namespace AutoSnapper
                 ec2.DeleteSnapshot(deleteSnapshotRequest);
               }
               catch (Exception ex) {
-                sr.WriteLine("Failed to delete snapshot {0}, failed with exception {1}", snapshot.SnapshotId, ex.Message);
+                var msg = String.Format("Failed to delete snapshot {0}, failed with exception {1}", snapshot.SnapshotId,
+                  ex.Message);
+                sr.WriteLine(msg);
+                Log.Error(ex, msg);
               }
             }
           }
@@ -116,8 +117,9 @@ namespace AutoSnapper
           sr.WriteLine("===========================================");
         }
       }
-
-      return sb.ToString();
+      var outputText = sb.ToString();
+      Log.Trace(outputText);
+      return outputText;
     }
 
     /// <summary>
