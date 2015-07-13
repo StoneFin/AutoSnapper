@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using Amazon.EC2;
 
 namespace AutoSnapper
 {
@@ -73,19 +74,25 @@ namespace AutoSnapper
 
           if (snapshotExpiredList.Any())
           {
+            var ec2 = Services.GetEc2Client();
+
             foreach (var snapshot in snapshotExpiredList)
             {
               sr.WriteLine("Deleting Snapshot, SnapshotId: {0}, VolumeId: {1}, StartTime: {2}", snapshot.SnapshotId,
                            snapshot.VolumeId, snapshot.StartTime);
 
-              var ec2 = Services.GetEc2Client();
 
               var deleteSnapshotRequest = new DeleteSnapshotRequest
                                             {
                                               SnapshotId = snapshot.SnapshotId
                                             };
 
-              ec2.DeleteSnapshot(deleteSnapshotRequest);
+              try {
+                ec2.DeleteSnapshot(deleteSnapshotRequest);
+              }
+              catch (Exception ex) {
+                sr.WriteLine("Failed to delete snapshot {0}, failed with exception {1}", snapshot.SnapshotId, ex.Message);
+              }
             }
           }
           else
