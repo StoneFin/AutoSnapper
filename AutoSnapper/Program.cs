@@ -1,13 +1,16 @@
 ﻿using System;
 using Fclp;
 using CLAP;
+using NLog;
 
 namespace AutoSnapper
 {
-  public class Program
-  {
+  public class Program {
+    private static Logger _logger = LogManager.GetCurrentClassLogger();
     public static void Main(string[] args) {
+      _logger.Trace("Program Start.");
       Parser.Run<AutoSnapper>(args);
+      _logger.Trace("Program End.");
       pause();
     }
 
