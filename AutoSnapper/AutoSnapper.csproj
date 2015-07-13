@@ -130,7 +130,6 @@
     <Compile Include="assemblyinfo.cs" />
     <Compile Include="RegisterInstancesConfig.cs" />
     <Compile Include="Services.cs" />
-    <Compile Include="SnapperArguments.cs" />
     <Compile Include="SnapshotManager.cs" />
     <Compile Include="VolumeManager.cs" />
   </ItemGroup>
