@@ -1,6 +1,4 @@
-﻿using System;
-using Fclp;
-using CLAP;
+﻿using CLAP;
 using NLog;
 
 namespace AutoSnapper
