@@ -305,5 +305,6 @@ namespace AutoSnapper
       }
     }
     #endregion
+
   }
 }
