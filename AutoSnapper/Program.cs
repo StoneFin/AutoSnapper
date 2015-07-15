@@ -1,5 +1,6 @@
 ﻿using CLAP;
 using NLog;
+using System;
 
 namespace AutoSnapper
 {
