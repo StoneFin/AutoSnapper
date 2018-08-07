@@ -64,7 +64,8 @@ namespace AutoSnapper
 
         Console.WriteLine();
         Console.WriteLine("Instances started, Associating Elastic IPs.");
-        Console.Write(InstanceManager.AssociateInstancesToElasticIps(instancesToStart));
+        Console.Write(InstanceManager.AssociateElasticIps(instancesToStart));
+
         return "Done Starting.";
       });
     }

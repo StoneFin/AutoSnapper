@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace AutoSnapper
@@ -84,46 +85,89 @@ namespace AutoSnapper
       return sb.ToString();
     }
 
-    /// <summary>
-    /// associates instances with their ElasticIPs
-    /// </summary>
-    /// <param name="instances"></param>
-    /// <returns></returns>
-    public static string AssociateInstancesToElasticIps(List<Instance> instances)
+    public static string AssociateElasticIps(List<Instance> instances)
     {
-      var instanceIpPairs = new List<string>();
-      var associateAddressRequests = new List<AssociateAddressRequest>();
-
-      foreach (var instance in instances)
+      //look at the instances we are going to associate
+      //assign them to the desired elastic ip if they aren't already associated
+      using (var ec2Client = Services.GetEc2Client())
       {
-        if (!string.IsNullOrEmpty(instance.ElasticIp))
+        var describeInstancesRequest = new DescribeInstancesRequest
         {
-          instanceIpPairs.Add(string.Format("{0}::{1}", instance.InstanceId, instance.ElasticIp));
-          associateAddressRequests.Add(new AssociateAddressRequest() { InstanceId = instance.InstanceId, PublicIp = instance.ElasticIp });
-        }
-      }
+          InstanceIds = instances.Select(x => x.InstanceId).ToList()
+        };
 
-      var sb = new StringBuilder();
+        //description of all instances
+        var describeInstanceResponse = ec2Client.DescribeInstances(describeInstancesRequest);
 
-      using (var sr = new StringWriter(sb))
-      {
-        var instanceIpPairCsv = String.Join(", ", instanceIpPairs);
+        //description of all addresses
+        var describeAddressResponses = ec2Client.DescribeAddresses().Addresses;
 
-        sr.WriteLine("===========================================");
-        sr.WriteLine(string.Format("Associating EC2 Instance(s) to ElasticIP(s): {0}", instanceIpPairCsv));
-        sr.WriteLine("===========================================");
+        //return value string InstanceId::ElasticIp format
+        var associatedInstanceIpPairs = new List<string>();
 
-        var ec2Client = Services.GetEc2Client();
+        //list of address association requests
+        var associateAddressRequests = new List<AssociateAddressRequest>();
 
-        foreach (var aar in associateAddressRequests)
+        foreach (var reservation in describeInstanceResponse.Reservations)
         {
-          ec2Client.AssociateAddress(aar);
-        }
-      }
+          foreach (var reservationInstance in reservation.Instances)
+          {
+            var instance = instances
+              .SingleOrDefault(x => x.InstanceId.Equals(reservationInstance.InstanceId));
 
-      return sb.ToString();
+            if (instance != null && !instance.ElasticIp.Equals(reservationInstance.PublicIpAddress))
+            {
+              //we have a matching instance and it is not assigned to the desired elastic ip
+              associatedInstanceIpPairs.Add(string.Format("{0}::{1}", instance.InstanceId, instance.ElasticIp));
+
+              var allocationId = describeAddressResponses
+                .SingleOrDefault(x => x.PublicIp.Equals(instance.ElasticIp))
+                .AllocationId;
+
+              if (!string.IsNullOrEmpty(allocationId))
+              {
+                var associatedAddressRequest = new AssociateAddressRequest
+                {
+                  AllocationId = allocationId,
+                  InstanceId = instance.InstanceId
+                };
+
+                associateAddressRequests.Add(associatedAddressRequest);
+              }
+            }
+          }
+        }
+
+        //now that we have a set of associations to make, build the output and make the associations
+        var sb = new StringBuilder();
+
+        using (var sr = new StringWriter(sb))
+        {
+          if (associateAddressRequests.Any())
+          {
+            var instanceIpPairCsv = String.Join(", ", associatedInstanceIpPairs);
+
+            sr.WriteLine("===========================================");
+            sr.WriteLine(string.Format("Associating EC2 Instance(s) to ElasticIP(s): {0}", instanceIpPairCsv));
+            sr.WriteLine("===========================================");
+
+            foreach (var aar in associateAddressRequests)
+            {
+              ec2Client.AssociateAddress(aar);
+            }
+          }
+          else
+          {
+            sr.WriteLine("===========================================");
+            sr.WriteLine("No Instances found to associate with ElasticIPs.");
+            sr.WriteLine("===========================================");
+          }
+        }
+
+        return sb.ToString();
+      }
     }
-    
+
     /// <summary>
     /// returns true when all instances are running
     /// </summary>
@@ -144,15 +188,15 @@ namespace AutoSnapper
       };
 
       var ec2Client = Services.GetEc2Client();
-      var statusResult = ec2Client.DescribeInstanceStatus(ec2Request).DescribeInstanceStatusResult;
-
-      if (statusResult.InstanceStatuses.Count == 0)
+      var instanceStatuses = ec2Client.DescribeInstanceStatus(ec2Request).InstanceStatuses;
+      
+      if (instanceStatuses.Count == 0)
       {
         //no instances found; must not be running yet
         return false;
       }
 
-      foreach (var instanceStatus in statusResult.InstanceStatuses)
+      foreach (var instanceStatus in instanceStatuses)
       {
         if (!instanceStatus.InstanceState.Name.Value.Equals("running"))
         {
