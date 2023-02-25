@@ -144,7 +144,7 @@ namespace AutoSnapper
       };
 
       var ec2Client = Services.GetEc2Client();
-      var statusResult = ec2Client.DescribeInstanceStatus(ec2Request).DescribeInstanceStatusResult;
+      var statusResult = ec2Client.DescribeInstanceStatus(ec2Request);
 
       if (statusResult.InstanceStatuses.Count == 0)
       {

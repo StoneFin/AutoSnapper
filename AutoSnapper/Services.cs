@@ -83,7 +83,7 @@ namespace AutoSnapper
     /// <returns></returns>
     public static IAmazonEC2 GetEc2Client()
     {
-      var ec2 = AWSClientFactory.CreateAmazonEC2Client();
+      var ec2 = new AmazonEC2Client();
 
       return ec2;
     }
@@ -94,7 +94,7 @@ namespace AutoSnapper
     /// <returns></returns>
     public static IAmazonSimpleDB GetSimpleDbClient()
     {
-      var sdb = AWSClientFactory.CreateAmazonSimpleDBClient();
+      var sdb = new AmazonSimpleDBClient();
 
       return sdb;
     }
@@ -105,7 +105,7 @@ namespace AutoSnapper
     /// <returns></returns>
     public static IAmazonS3 GetS3Client()
     {
-      var s3Client = AWSClientFactory.CreateAmazonS3Client();
+      var s3Client = new AmazonS3Client();
 
       return s3Client;
     }
